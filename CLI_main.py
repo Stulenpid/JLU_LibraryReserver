@@ -1,6 +1,6 @@
 #CLI版本
-#CMD:   python ./main.py
-#请在配置区填写抓包获取的TOKEN
+#CMD:   python ./CLI_main.py
+#请在配置区填写抓包获取的必要信息
 
 import requests
 import json
@@ -13,17 +13,17 @@ TOKEN = "junyue-server *************"
 BASE_URL = "https://libseat.jlu.edu.cn"
 
 # 座位预约配置
-SEAT_ID = 3421
+SEAT_ID = 3421 #座位编号与真实座位对应关系，需抓包查看
 START_TIME = "18:00"
 END_TIME = "22:00"
 
 # 会议室预约配置
-MEETING_ROOM_ID = 30
+MEETING_ROOM_ID = 30 #会议室编号与房间对应关系，需抓包查看
 MEETING_START_TIME = "13:00"
 MEETING_END_TIME = "17:00"
 MEETING_TITLE = "小组讨论"
 MEETING_CONTENT = "无"
-MEETING_ATTENDEES = [24545, 25420]
+MEETING_ATTENDEES = [****, ****] #对于会议室预约，需要要其他同学的ID，获取方法同TOKEN
 
 # 定时抢座配置（提前到达此时间开始等待）
 WAIT_UNTIL = None  # 例如 "2026-06-18 08:00:00"，None 表示立即执行
@@ -46,9 +46,9 @@ SLOT_RETRY_DELAY = 1.0       # 无返回后等待多久补发（秒）
 SLOT_MAX_ATTEMPTS = 2        # 单段最多提交次数（含首次）
 
 # 邮件提醒配置（Token 失效时发送提醒）
-EMAIL_SENDER = "2243570879@qq.com"
-EMAIL_RECEIVER = "2243570879@qq.com"
-EMAIL_SMTP_AUTHCODE = "nyqvlftpbtfxeccf"
+EMAIL_SENDER = "123456789@example.com"
+EMAIL_RECEIVER = "123456789@example.com"
+EMAIL_SMTP_AUTHCODE = "*******EXAMPLE********"
 # ==================== 配置区结束 ====================
 
 HEADERS = {
