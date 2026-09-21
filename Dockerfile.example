@@ -1,0 +1,82 @@
+# syntax=docker/dockerfile:1
+
+##############################################
+# 阶段一：如果前端需要构建，可以在这里加 build stage
+# 例如：
+# FROM node:20 AS frontend-build
+# WORKDIR /build
+# COPY ./lib-assistant/frontend ./lib-assistant/frontend
+# RUN cd lib-assistant/frontend && npm install && npm run build
+##############################################
+
+FROM crpi-ez14zxrl6h5555tm.cn-beijing.personal.cr.aliyuncs.com/stulenpid/myhub:mynginx
+
+# ------------------------------------------------------------------
+# 1. 替换 apt 源为阿里云镜像（兼容传统 sources.list 和新版 deb822 格式）
+# ------------------------------------------------------------------
+RUN set -eux; \
+    if [ -f /etc/apt/sources.list ]; then \
+        sed -i \
+            -e 's|https\?://deb.debian.org|https://mirrors.aliyun.com|g' \
+            -e 's|https\?://security.debian.org|https://mirrors.aliyun.com/debian-security|g' \
+            /etc/apt/sources.list; \
+    fi; \
+    if [ -f /etc/apt/sources.list.d/debian.sources ]; then \
+        sed -i \
+            -e 's|https\?://deb.debian.org|https://mirrors.aliyun.com|g' \
+            -e 's|https\?://security.debian.org|https://mirrors.aliyun.com/debian-security|g' \
+            /etc/apt/sources.list.d/debian.sources; \
+    fi; \
+    echo 'Acquire::ForceIPv4 "true";' > /etc/apt/apt.conf.d/99force-ipv4; \
+    echo 'Acquire::Retries "3";' > /etc/apt/apt.conf.d/99retries; \
+    echo 'Acquire::http::Timeout "10";' >> /etc/apt/apt.conf.d/99retries; \
+    echo 'Acquire::https::Timeout "10";' >> /etc/apt/apt.conf.d/99retries; \
+    for i in 1 2 3; do \
+        timeout 60 apt-get update && break || { echo "attempt $i failed/timeout, retrying..."; sleep 3; }; \
+    done; \
+    apt-get install -y --no-install-recommends \
+        python3 python3-pip python3-venv supervisor; \
+    rm -rf /var/lib/apt/lists/*
+
+# ------------------------------------------------------------------
+# 2. 拷贝各前端产物到 nginx 静态目录
+#    （根据你项目实际目录结构调整目标路径）
+# ------------------------------------------------------------------
+COPY ./lib-assistant/frontend/dist /usr/share/nginx/html/reserve
+
+# 如果用了上面的 build stage，改成从 build 阶段拷贝，例如：
+# COPY --from=frontend-build /build/daohang/dist /usr/share/nginx/html/daohang
+# COPY --from=frontend-build /build/qr-scanner/dist /usr/share/nginx/html/qr-scanner
+# COPY --from=frontend-build /build/lib-assistant/frontend/dist /usr/share/nginx/html/lib-assistant
+
+# ------------------------------------------------------------------
+# 3. Python 后端：使用虚拟环境隔离安装，避免与系统 apt 包冲突
+#    （解决 externally-managed-environment / uninstall-no-record-file 报错）
+# ------------------------------------------------------------------
+WORKDIR /app
+COPY ./lib-assistant/backend /app/backend
+COPY ./lib-assistant/backend/requirements.txt /app/requirements.txt
+
+RUN python3 -m venv /opt/venv \
+    && /opt/venv/bin/pip install --no-cache-dir --upgrade pip \
+    && /opt/venv/bin/pip install --no-cache-dir -r /app/requirements.txt
+
+ENV PATH="/opt/venv/bin:$PATH"
+
+# ------------------------------------------------------------------
+# 4. nginx 配置：清掉基础镜像自带的默认 conf.d 配置，换成自定义 nginx.conf
+#    ⚠️ 之前 404 问题的根本原因就是这一步在 Dockerfile 里被漏掉了，
+#    导致容器实际运行的一直是基础镜像里自带的默认 default.conf
+#    （没有 /api/ 反代规则，所有 /api/* 请求都会 404）。
+# ------------------------------------------------------------------
+RUN rm -f /etc/nginx/conf.d/*.conf
+COPY ./nginx.conf /etc/nginx/nginx.conf
+
+# ------------------------------------------------------------------
+# 5. supervisord 配置
+# ------------------------------------------------------------------
+COPY ./supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+
+EXPOSE 80
+
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf", "-n"]
