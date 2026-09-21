@@ -2,7 +2,8 @@
 
 一个基于 Python 的命令行工具，用于自动化吉林大学图书馆座位 / 会议室的查询、预约、取消，并提供后台签到守护、Token 有效性监控等辅助功能。
 
-lib-assistant/中包含前后端代码（详见代码注释），可以搭配/dockerfile进行容器化部署，具备较完整交互功能，因其为异步预约架构，功能强大，但有被制裁的风险。
+lib-assistant/中包含前后端代码（详见代码注释），可以搭配/dockerfile /nginx.conf /supervisord.conf 进行容器化部署，具备较完整交互功能，因其为异步预约架构，功能强大，但有被制裁的风险。
+
 CLI_main.py 为可独立运行的CLI版本，稳定的同步预约，具备基本功能，服务器可搭配Screen等使用。
 
 
@@ -161,11 +162,11 @@ python test_more.py
 
 ```
 .
-└──lin-assistant/  # 包含前后端代码，完整功能，适合部署
+└──lin-assistant/  # 包含前后端代码，完整功能，适合部署（需要先本地构建前端）
 └── CLI_main.py    # CLI主程序，包含基本功能实现
 └── Dockerfile.example    # docker部署用
-└── nginx.conf.example    # 搭配dockerfile部署
-└── supervisord.conf.example #进程管理工具配置文件
+└── nginx.conf.example    # 参与docker部署
+└── supervisord.conf.example #进程管理工具配置文件,参与docker部署，负责单镜像多进程
 ```
 
 ---
