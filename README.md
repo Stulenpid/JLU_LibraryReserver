@@ -163,6 +163,9 @@ python test_more.py
 .
 └──lin-assistant/  # 包含前后端代码，完整功能，适合部署
 └── CLI_main.py    # CLI主程序，包含基本功能实现
+└── Dockerfile.example    # docker部署用
+└── nginx.conf.example    # 搭配dockerfile部署
+└── supervisord.conf.example #进程管理工具配置文件
 ```
 
 ---
